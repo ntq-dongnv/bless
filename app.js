@@ -5,13 +5,15 @@ const { deleteDirectory, sleep } = require("./helpers");
 
 async function verifyOtp(popup) {
   const maxRetries = 5;
-  const delayMs = 10000;
+  const delayMs = 3000;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`Thử lần ${attempt}/${maxRetries}`);
 
       const otpCode = await getOTPFromEmail("userfacebookga@gmail.com");
+      console.log("otpCode", otpCode);
+
       // const otpCode = "123456";
       const otpInputs = await popup.$$('input[autocomplete="one-time-code"]');
 
@@ -77,8 +79,17 @@ async function verifyOtp(popup) {
 
 async function main() {
   const userDataDir = "./tmp";
-  // Xóa thư mục userDataDir nếu tồn tại
   deleteDirectory(userDataDir);
+
+  // Thêm hàm kiểm tra IP
+  async function checkIP(page) {
+    await page.goto("https://api.ipify.org?format=json");
+    const content = await page.content();
+    const match = content.match(/"ip":"([^"]+)"/);
+    if (match) {
+      console.log("IP hiện tại:", match[1]);
+    }
+  }
 
   const pathToExtension = path.join(
     __dirname,
@@ -90,9 +101,18 @@ async function main() {
       `--disable-extensions-except=${pathToExtension}`,
       `--load-extension=${pathToExtension}`,
     ],
+    proxy: {
+      server: "http://113.179.1.118:16524",
+      username: "1mdwAFhoM",
+      password: "VkiELs",
+    },
   });
 
   const page = await browser.newPage();
+
+  // Kiểm tra IP trước khi truy cập trang chính
+  await checkIP(page);
+
   await page.goto("https://bless.network/dashboard/login");
 
   await page.fill(
@@ -117,7 +137,7 @@ async function main() {
   await verifyOtp(popup);
 
   // Đợi cho đến khi popup đóng và chuyển hướng xong
-  await popup.waitForEvent("close");
+  await popup.waitForEvent("close", { timeout: 60000 });
 
   // Đợi cho trang chính load xong
   await Promise.all([
@@ -149,41 +169,37 @@ async function main() {
   await extensionPage.goto(extensionUrl);
 
   await extensionPage.evaluate(async () => {
-    async function generateDeviceIdentifier() {
-      const getHardwareIdentifier = async () => {
-        try {
-          const [r, e] = await Promise.all([
-              chrome.system.cpu.getInfo(),
-              chrome.system.memory.getInfo(),
-            ]),
-            t = {
-              cpuArchitecture: r.archName,
-              cpuModel: r.modelName,
-              cpuFeatures: r.features,
-              numOfProcessors: r.numOfProcessors,
-              totalMemory: e.capacity,
-            };
-          return btoa(JSON.stringify(t));
-        } catch (r) {
-          return console.error("Error getting hardware info:", r), null;
-        }
-      };
-
+    const getHardwareIdentifier = async () => {
+      try {
+        const [r, e] = await Promise.all([
+            chrome.system.cpu.getInfo(),
+            chrome.system.memory.getInfo(),
+          ]),
+          t = {
+            cpuArchitecture: r.archName,
+            cpuModel: r.modelName,
+            cpuFeatures: r.features,
+            numOfProcessors: r.numOfProcessors,
+            totalMemory: e.capacity,
+          };
+        return btoa(JSON.stringify(t));
+      } catch (r) {
+        return console.error("Error getting hardware info:", r), null;
+      }
+    };
+    const generateDeviceIdentifier = async () => {
+      console.log("test");
       const r = await getHardwareIdentifier(),
         e = JSON.stringify({
           hardware: r,
         }),
         n = new TextEncoder().encode(e);
-
       return crypto.subtle.digest("SHA-256", n).then((i) =>
         Array.from(new Uint8Array(i))
           .map((a) => a.toString(16).padStart(2, "0"))
           .join("")
       );
-    }
-
-    const deviceId = await generateDeviceIdentifier();
-    console.log("Device ID:", deviceId);
+    };
   });
   //   await browser.close();
 }
