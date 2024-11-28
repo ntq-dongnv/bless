@@ -2,17 +2,20 @@ const { chromium } = require("playwright");
 const path = require("path");
 const { getOTPFromEmail } = require("./imap");
 const { deleteDirectory, sleep, createAxios } = require("./helpers");
+const fs = require("fs");
+const Logger = require("./logger");
+process.env.NODE_NO_WARNINGS = "1";
 
-async function verifyOtp(popup) {
+async function verifyOtp(popup, email) {
   const maxRetries = 5;
-  const delayMs = 3000;
+  const delayMs = 10000;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Thử lần ${attempt}/${maxRetries}`);
+      Logger.info(`Thử verify OTP lần ${attempt}/${maxRetries}`);
 
-      const otpCode = await getOTPFromEmail("userfacebookga@gmail.com");
-      console.log("otpCode", otpCode);
+      const otpCode = await getOTPFromEmail(email);
+      Logger.info(`Đã lấy OTP: ${otpCode}`);
 
       // const otpCode = "123456";
       const otpInputs = await popup.$$('input[autocomplete="one-time-code"]');
@@ -37,6 +40,8 @@ async function verifyOtp(popup) {
       const responseText = await response.text();
       console.log("Response raw:", responseText);
 
+      Logger.error(`Response: ${responseText}`);
+
       // Chỉ parse JSON nếu response là JSON hợp lệ
       let data;
       try {
@@ -52,7 +57,7 @@ async function verifyOtp(popup) {
 
       // Nếu không thành công và còn lượt thử, đợi 3 giây
       if (attempt < maxRetries) {
-        console.log("Đợi 3 giây trước khi thử lại...");
+        Logger.info(`Đợi ${delayMs}ms trước khi thử lại...`);
         await sleep(delayMs);
       }
     } catch (error) {
@@ -62,11 +67,11 @@ async function verifyOtp(popup) {
       ) {
         return true;
       }
-      console.log(`Lỗi ở lần thử ${attempt}:`, error);
+      Logger.error(`Lỗi ở lần thử ${attempt}: ${error.message}`);
 
       // Nếu còn lượt thử, đợi 3 giây
       if (attempt < maxRetries) {
-        console.log("Đợi 3 giây trước khi thử lại...");
+        Logger.info(`Đợi ${delayMs}ms trước khi thử lại...`);
         await sleep(delayMs);
       }
     }
@@ -77,9 +82,31 @@ async function verifyOtp(popup) {
   return false;
 }
 
-async function main() {
-  const userDataDir = "./tmp";
-  deleteDirectory(userDataDir);
+function deleteFolderRecursive(folderPath) {
+  if (fs.existsSync(folderPath)) {
+    fs.readdirSync(folderPath).forEach((file) => {
+      const curPath = path.join(folderPath, file);
+      if (fs.lstatSync(curPath).isDirectory()) {
+        deleteFolderRecursive(curPath);
+      } else {
+        fs.unlinkSync(curPath);
+      }
+    });
+    fs.rmdirSync(folderPath);
+  }
+}
+
+async function login(email, proxy, refCode) {
+  Logger.info(`Đăng nhập với email: ${email}`);
+
+  // Tạo random userDataDir
+  const randomString = Math.random().toString(36).substring(7);
+  const userDataDir = `./_user_data/${randomString}`;
+
+  // Tạo thư mục mới
+  if (!fs.existsSync(userDataDir)) {
+    fs.mkdirSync(userDataDir, { recursive: true });
+  }
 
   // Thêm hàm kiểm tra IP
   async function checkIP(page) {
@@ -87,7 +114,7 @@ async function main() {
     const content = await page.content();
     const match = content.match(/"ip":"([^"]+)"/);
     if (match) {
-      console.log("IP hiện tại:", match[1]);
+      Logger.info(`IP hiện tại: ${match[1]}`);
     }
   }
 
@@ -96,15 +123,15 @@ async function main() {
     "pljbjcehnhcnofmkdbjolghdcjnmekia"
   );
   const browser = await chromium.launchPersistentContext(userDataDir, {
-    headless: false,
+    headless: true,
     args: [
       `--disable-extensions-except=${pathToExtension}`,
       `--load-extension=${pathToExtension}`,
     ],
     proxy: {
-      server: "http://113.179.1.118:16524",
-      username: "1mdwAFhoM",
-      password: "VkiELs",
+      server: proxy,
+      // username: "1mdwAFhoM",
+      // password: "VkiELs",
     },
   });
 
@@ -113,12 +140,9 @@ async function main() {
   // Kiểm tra IP trước khi truy cập trang chính
   await checkIP(page);
 
-  await page.goto("https://bless.network/dashboard/login");
+  await page.goto(`https://bless.network/dashboard?ref=${refCode}`);
 
-  await page.fill(
-    'input[placeholder="m@example.com"]',
-    "userfacebookga@gmail.com"
-  );
+  await page.fill('input[placeholder="m@example.com"]', email);
 
   // Đợi và xử lý popup window
   const [popup] = await Promise.all([
@@ -133,17 +157,20 @@ async function main() {
     popup.waitForLoadState("load"),
   ]);
 
-  await sleep(3000);
-  await verifyOtp(popup);
+  Logger.info(`Đang verify OTP cho email: ${email}`);
+  await sleep(5000);
+  await verifyOtp(popup, email);
 
   // Đợi cho đến khi popup đóng và chuyển hướng xong
   await popup.waitForEvent("close", { timeout: 60000 });
 
+  Logger.info(`Đã verify email thành công: ${email}`);
+
   // Đợi cho trang chính load xong
   await Promise.all([
-    page.waitForLoadState("networkidle"),
-    page.waitForLoadState("domcontentloaded"),
-    page.waitForLoadState("load"),
+    page.waitForLoadState("networkidle", { timeout: 60000 }),
+    page.waitForLoadState("domcontentloaded", { timeout: 60000 }),
+    page.waitForLoadState("load", { timeout: 60000 }),
   ]);
 
   // Thêm hàm đợi và kiểm tra B7S_AUTH_TOKEN
@@ -161,24 +188,36 @@ async function main() {
     });
   });
 
-  console.log("B7S_AUTH_TOKEN:", authToken);
+  const referrals = await page.evaluate(async (authToken) => {
+    return (
+      await fetch("https://gateway-run.bls.dev/api/v1/users/referrals", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      })
+    ).json();
+  }, authToken);
 
-  const axios = createAxios('https://1mdwAFhoM:VkiELs@113.179.1.118:16524', {
-    'content-type': 'application/json',
-    'authorization': `Bearer ${authToken}`
-  })
+  const { exec } = require("child_process");
 
-  const refRes = await axios.get('https://gateway-run.bls.dev/api/v1/users/referrals');
-  console.log(refRes, refRes.data.refCode);
-
-  const referrals = await page.evaluate(async () => {
-    return (await fetch('https://gateway-run.bls.dev/api/v1/users/referrals')).json()
+  exec(`rm -rf ${userDataDir}`, (err) => {
+    if (err) {
+      Logger.error(`Error while executing rm -rf: ${err}`);
+    } else {
+      Logger.info(`${userDataDir} has been deleted successfully!`);
+    }
   });
 
-  console.log(referrals);
-  
+  Logger.info(`Đã đăng nhập với email: ${email} thành công`);
 
-  await sleep(1000);
+  await browser.close();
+
+  return {
+    authToken,
+    referrals,
+  };
+
   // const extensionUrl = `chrome-extension://pljbjcehnhcnofmkdbjolghdcjnmekia/index.html`;
   // const extensionPage = await browser.newPage();
   // await extensionPage.goto(extensionUrl);
@@ -216,7 +255,8 @@ async function main() {
   //     );
   //   };
   // });
-  //   await browser.close();
 }
 
-main().catch(console.error);
+module.exports = {
+  login,
+};

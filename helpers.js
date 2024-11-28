@@ -69,7 +69,6 @@ function base64ToImage(base64String, outputPath) {
   }
 }
 
-
 function deleteDirectory(directoryPath) {
   if (fs.existsSync(directoryPath)) {
     fs.rmSync(directoryPath, { recursive: true, force: true });
@@ -81,7 +80,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-
 module.exports = {
   createAxios,
   sleep,
@@ -90,6 +88,5 @@ module.exports = {
   imageToBase64,
   base64ToImage,
   deleteDirectory,
-  sleep
+  sleep,
 };
-

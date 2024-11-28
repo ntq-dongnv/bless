@@ -95,3 +95,8 @@ async function getOTPFromEmail(email) {
 }
 
 module.exports = { getOTPFromEmail };
+
+// (async () => {
+//   const otp = await getOTPFromEmail("user.faceboo.k.ga@gmail.com");
+//   console.log(otp);
+// })();
