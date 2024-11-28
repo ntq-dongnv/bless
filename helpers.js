@@ -1,46 +1,74 @@
 const fs = require("fs");
+const { createClient } = require("@supabase/supabase-js");
+const { default: axios } = require("axios");
+const { HttpsProxyAgent } = require("https-proxy-agent");
 
-async function getHardwareIdentifier() {
+require("dotenv").config();
+
+function createAxios(proxy, headers) {
+  const proxyAgent = new HttpsProxyAgent(proxy);
+  return axios.create({
+    httpsAgent: proxyAgent,
+    headers,
+    validateStatus: function (status) {
+      return true; // Luôn trả về true để ngăn Axios throw lỗi
+    },
+  });
+}
+
+function createAxiosWithSocks5(socks5, headers) {
+  const agent = new SocksProxyAgent("socks://116.99.230.28:30149");
+  return axios.create({
+    httpAgent: agent,
+    headers,
+  });
+}
+
+async function checkProxyLive(proxy, timeout = 10000) {
+  const proxyAgent = new HttpsProxyAgent(proxy);
   try {
-    const [r, e] = await Promise.all([
-        chrome.system.cpu.getInfo(),
-        chrome.system.memory.getInfo(),
-      ]),
-      t = {
-        cpuArchitecture: r.archName,
-        cpuModel: r.modelName,
-        cpuFeatures: r.features,
-        numOfProcessors: r.numOfProcessors,
-        totalMemory: e.capacity,
-      };
-    return btoa(JSON.stringify(t));
-  } catch (r) {
-    return console.error("Error getting hardware info:", r), null;
+    const response = await axios.get("https://api.ipify.org", {
+      httpsAgent: proxyAgent,
+      timeout: timeout,
+    });
+    return response.data;
+  } catch (error) {
+    // console.log(error);
+    return false;
   }
 }
-async function generateDeviceIdentifier() {
-  const r = await getHardwareIdentifier(),
-    e = JSON.stringify({
-      hardware: r,
-    }),
-    n = new TextEncoder().encode(e);
-  return crypto.subtle.digest("SHA-256", n).then((i) =>
-    Array.from(new Uint8Array(i))
-      .map((a) => a.toString(16).padStart(2, "0"))
-      .join("")
-  );
+
+function createSupabaseClient() {
+  const supabaseUrl = "https://wdokmmnkxsjkegeuyqme.supabase.co";
+  const supabaseAnonKey = process.env.SUPABASE_KEY;
+  return createClient(supabaseUrl, supabaseAnonKey);
 }
 
-function generateRandomDeviceId() {
-  // Tạo mảng 32 bytes ngẫu nhiên (vì mỗi byte sẽ chuyển thành 2 ký tự hex)
-  const randomBytes = new Uint8Array(32);
-  crypto.getRandomValues(randomBytes);
-
-  // Chuyển đổi thành chuỗi hex
-  return Array.from(randomBytes)
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+function imageToBase64(filePath) {
+  try {
+    // Đọc file ảnh
+    const image = fs.readFileSync(filePath);
+    // Chuyển đổi buffer thành chuỗi base64
+    return Buffer.from(image).toString("base64");
+  } catch (error) {
+    console.error("Lỗi khi chuyển đổi ảnh sang base64:", error);
+    return null;
+  }
 }
+
+function base64ToImage(base64String, outputPath) {
+  try {
+    // Chuyển đổi chuỗi base64 thành buffer
+    const buffer = Buffer.from(base64String, "base64");
+    // Ghi buffer vào file
+    fs.writeFileSync(outputPath, buffer);
+    return outputPath;
+  } catch (error) {
+    console.error("Lỗi khi chuyển đổi base64 thành ảnh:", error);
+    return false;
+  }
+}
+
 
 function deleteDirectory(directoryPath) {
   if (fs.existsSync(directoryPath)) {
@@ -53,4 +81,15 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = { deleteDirectory, sleep };
+
+module.exports = {
+  createAxios,
+  sleep,
+  checkProxyLive,
+  createSupabaseClient,
+  imageToBase64,
+  base64ToImage,
+  deleteDirectory,
+  sleep
+};
+

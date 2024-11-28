@@ -1,7 +1,7 @@
 const { chromium } = require("playwright");
 const path = require("path");
 const { getOTPFromEmail } = require("./imap");
-const { deleteDirectory, sleep } = require("./helpers");
+const { deleteDirectory, sleep, createAxios } = require("./helpers");
 
 async function verifyOtp(popup) {
   const maxRetries = 5;
@@ -163,44 +163,59 @@ async function main() {
 
   console.log("B7S_AUTH_TOKEN:", authToken);
 
-  await sleep(1000);
-  const extensionUrl = `chrome-extension://pljbjcehnhcnofmkdbjolghdcjnmekia/index.html`;
-  const extensionPage = await browser.newPage();
-  await extensionPage.goto(extensionUrl);
+  const axios = createAxios('https://1mdwAFhoM:VkiELs@113.179.1.118:16524', {
+    'content-type': 'application/json',
+    'authorization': `Bearer ${authToken}`
+  })
 
-  await extensionPage.evaluate(async () => {
-    const getHardwareIdentifier = async () => {
-      try {
-        const [r, e] = await Promise.all([
-            chrome.system.cpu.getInfo(),
-            chrome.system.memory.getInfo(),
-          ]),
-          t = {
-            cpuArchitecture: r.archName,
-            cpuModel: r.modelName,
-            cpuFeatures: r.features,
-            numOfProcessors: r.numOfProcessors,
-            totalMemory: e.capacity,
-          };
-        return btoa(JSON.stringify(t));
-      } catch (r) {
-        return console.error("Error getting hardware info:", r), null;
-      }
-    };
-    const generateDeviceIdentifier = async () => {
-      console.log("test");
-      const r = await getHardwareIdentifier(),
-        e = JSON.stringify({
-          hardware: r,
-        }),
-        n = new TextEncoder().encode(e);
-      return crypto.subtle.digest("SHA-256", n).then((i) =>
-        Array.from(new Uint8Array(i))
-          .map((a) => a.toString(16).padStart(2, "0"))
-          .join("")
-      );
-    };
+  const refRes = await axios.get('https://gateway-run.bls.dev/api/v1/users/referrals');
+  console.log(refRes, refRes.data.refCode);
+
+  const referrals = await page.evaluate(async () => {
+    return (await fetch('https://gateway-run.bls.dev/api/v1/users/referrals')).json()
   });
+
+  console.log(referrals);
+  
+
+  await sleep(1000);
+  // const extensionUrl = `chrome-extension://pljbjcehnhcnofmkdbjolghdcjnmekia/index.html`;
+  // const extensionPage = await browser.newPage();
+  // await extensionPage.goto(extensionUrl);
+
+  // await extensionPage.evaluate(async () => {
+  //   const getHardwareIdentifier = async () => {
+  //     try {
+  //       const [r, e] = await Promise.all([
+  //           chrome.system.cpu.getInfo(),
+  //           chrome.system.memory.getInfo(),
+  //         ]),
+  //         t = {
+  //           cpuArchitecture: r.archName,
+  //           cpuModel: r.modelName,
+  //           cpuFeatures: r.features,
+  //           numOfProcessors: r.numOfProcessors,
+  //           totalMemory: e.capacity,
+  //         };
+  //       return btoa(JSON.stringify(t));
+  //     } catch (r) {
+  //       return console.error("Error getting hardware info:", r), null;
+  //     }
+  //   };
+  //   const generateDeviceIdentifier = async () => {
+  //     console.log("test");
+  //     const r = await getHardwareIdentifier(),
+  //       e = JSON.stringify({
+  //         hardware: r,
+  //       }),
+  //       n = new TextEncoder().encode(e);
+  //     return crypto.subtle.digest("SHA-256", n).then((i) =>
+  //       Array.from(new Uint8Array(i))
+  //         .map((a) => a.toString(16).padStart(2, "0"))
+  //         .join("")
+  //     );
+  //   };
+  // });
   //   await browser.close();
 }
 
