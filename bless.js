@@ -5,6 +5,7 @@ const { deleteDirectory, sleep, createAxios } = require("./helpers");
 const fs = require("fs");
 const Logger = require("./logger");
 process.env.NODE_NO_WARNINGS = "1";
+const { exec } = require("child_process");
 
 async function verifyOtp(popup, email) {
   const maxRetries = 5;
@@ -185,7 +186,6 @@ async function login(email, proxy, refCode) {
     ).json();
   }, authToken);
 
-  const { exec } = require("child_process");
 
   exec(`rm -rf ${userDataDir}`, (err) => {
     if (err) {
