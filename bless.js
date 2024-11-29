@@ -105,16 +105,18 @@ async function login(email, proxy, refCode) {
     }
   }
 
-  // const pathToExtension = path.join(
-  //   __dirname,
-  //   "pljbjcehnhcnofmkdbjolghdcjnmekia"
-  // );
+  const pathToExtension = path.join(
+    __dirname,
+    "extention_snapshots/0.1.4/pljbjcehnhcnofmkdbjolghdcjnmekia"
+  );
+  console.log(pathToExtension);
+
   const browser = await chromium.launchPersistentContext(userDataDir, {
-    headless: true,
-    // args: [
-    //   `--disable-extensions-except=${pathToExtension}`,
-    //   `--load-extension=${pathToExtension}`,
-    // ],
+    headless: false,
+    args: [
+      `--disable-extensions-except=${pathToExtension}`,
+      `--load-extension=${pathToExtension}`,
+    ],
     proxy: {
       server: proxy,
       // username: "1mdwAFhoM",
@@ -187,60 +189,53 @@ async function login(email, proxy, refCode) {
   }, authToken);
 
 
-  exec(`rm -rf ${userDataDir}`, (err) => {
-    if (err) {
-      Logger.error(`Error while executing rm -rf: ${err}`);
-    } else {
-      Logger.info(`${userDataDir} has been deleted successfully!`);
-    }
-  });
+  // exec(`rm -rf ${userDataDir}`, (err) => {
+  //   if (err) {
+  //     Logger.error(`Error while executing rm -rf: ${err}`);
+  //   } else {
+  //     Logger.info(`${userDataDir} has been deleted successfully!`);
+  //   }
+  // });
 
   Logger.info(`Đã đăng nhập với email: ${email} thành công`);
 
-  await browser.close();
 
-  return {
-    authToken,
-    referrals,
-  };
 
-  // const extensionUrl = `chrome-extension://pljbjcehnhcnofmkdbjolghdcjnmekia/index.html`;
-  // const extensionPage = await browser.newPage();
-  // await extensionPage.goto(extensionUrl);
+  // await browser.close();
 
-  // await extensionPage.evaluate(async () => {
-  //   const getHardwareIdentifier = async () => {
-  //     try {
-  //       const [r, e] = await Promise.all([
-  //           chrome.system.cpu.getInfo(),
-  //           chrome.system.memory.getInfo(),
-  //         ]),
-  //         t = {
-  //           cpuArchitecture: r.archName,
-  //           cpuModel: r.modelName,
-  //           cpuFeatures: r.features,
-  //           numOfProcessors: r.numOfProcessors,
-  //           totalMemory: e.capacity,
-  //         };
-  //       return btoa(JSON.stringify(t));
-  //     } catch (r) {
-  //       return console.error("Error getting hardware info:", r), null;
-  //     }
-  //   };
-  //   const generateDeviceIdentifier = async () => {
-  //     console.log("test");
-  //     const r = await getHardwareIdentifier(),
-  //       e = JSON.stringify({
-  //         hardware: r,
-  //       }),
-  //       n = new TextEncoder().encode(e);
-  //     return crypto.subtle.digest("SHA-256", n).then((i) =>
-  //       Array.from(new Uint8Array(i))
-  //         .map((a) => a.toString(16).padStart(2, "0"))
-  //         .join("")
-  //     );
-  //   };
-  // });
+  // return {
+  //   authToken,
+  //   referrals,
+  // };
+
+  await sleep(3000);
+  const extensionUrl = `chrome-extension://pljbjcehnhcnofmkdbjolghdcjnmekia/index.html`;
+  const extensionPage = await browser.newPage();
+  await extensionPage.goto(extensionUrl);
+
+  await sleep(2000)
+
+  page.reload();
+
+  const nodeData = await extensionPage.evaluate(() => {
+    return new Promise((resolve) => {
+      const checkNodeData = () => {
+        chrome.storage.local.get("nodeData", (result) => {
+          if (result.nodeData) {
+            resolve(result.nodeData);
+          } else {
+            setTimeout(checkNodeData, 500); // Kiểm tra lại sau mỗi 500ms
+          }
+        });
+      };
+      checkNodeData();
+    });
+  });
+
+  console.log(nodeData);
+
+  extensionPage.reload();
+  
 }
 
 module.exports = {

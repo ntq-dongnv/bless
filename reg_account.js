@@ -5,6 +5,10 @@ const { changeIP } = require("./proxy/proxyfb");
 const { status } = require("./status");
 
 async function main() {
+
+  const proxy = await changeIP("432191faa67668a10a3d14351675526c876f");
+  await login('userfacebookga@gmail.com', proxy)
+  return
   // const codes = [
   //   "1CCCN8",
   //   "XX064T",

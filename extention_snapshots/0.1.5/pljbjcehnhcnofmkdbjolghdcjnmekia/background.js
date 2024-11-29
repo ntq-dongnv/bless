@@ -42232,6 +42232,8 @@ async function getSystemStats() {
     }
 }
 chrome.runtime.onMessage.addListener( (r, e, t) => ((async () => {
+    console.log(r.action);
+    
     if (e.id !== chrome.runtime.id) {
         t({
             error: "Unauthorized sender"
