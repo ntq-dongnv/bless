@@ -82,20 +82,6 @@ async function verifyOtp(popup, email) {
   return false;
 }
 
-function deleteFolderRecursive(folderPath) {
-  if (fs.existsSync(folderPath)) {
-    fs.readdirSync(folderPath).forEach((file) => {
-      const curPath = path.join(folderPath, file);
-      if (fs.lstatSync(curPath).isDirectory()) {
-        deleteFolderRecursive(curPath);
-      } else {
-        fs.unlinkSync(curPath);
-      }
-    });
-    fs.rmdirSync(folderPath);
-  }
-}
-
 async function login(email, proxy, refCode) {
   Logger.info(`Đăng nhập với email: ${email}`);
 
@@ -118,16 +104,16 @@ async function login(email, proxy, refCode) {
     }
   }
 
-  const pathToExtension = path.join(
-    __dirname,
-    "pljbjcehnhcnofmkdbjolghdcjnmekia"
-  );
+  // const pathToExtension = path.join(
+  //   __dirname,
+  //   "pljbjcehnhcnofmkdbjolghdcjnmekia"
+  // );
   const browser = await chromium.launchPersistentContext(userDataDir, {
     headless: true,
-    args: [
-      `--disable-extensions-except=${pathToExtension}`,
-      `--load-extension=${pathToExtension}`,
-    ],
+    // args: [
+    //   `--disable-extensions-except=${pathToExtension}`,
+    //   `--load-extension=${pathToExtension}`,
+    // ],
     proxy: {
       server: proxy,
       // username: "1mdwAFhoM",
