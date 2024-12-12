@@ -1,6 +1,6 @@
 const supabase = require("./helpers").createSupabaseClient();
 
-async function fetchBlessAccountsForRegNode(limit = 1000) {
+async function fetchBlessAccountsForRegNode(limit = 100000) {
   let allData = [];
   let page = 0;
   const pageSize = 1000;

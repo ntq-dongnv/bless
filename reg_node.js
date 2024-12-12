@@ -133,7 +133,7 @@ async function run() {
       throw new Error("Không có proxy");
     }
 
-    const accounts = await fetchBlessAccountsForRegNode();
+    const accounts = _.shuffle(await fetchBlessAccountsForRegNode());
 
     Logger.info(`Đang đăng ký ${accounts.length} account`);
 
