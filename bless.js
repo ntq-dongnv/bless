@@ -100,7 +100,7 @@ async function login(email, proxy, refCode) {
 
   // Tạo random userDataDir
   const randomString = Math.random().toString(36).substring(7);
-  const userDataDir = `./_user_data/${randomString}`;
+  const userDataDir = `C:\Users\thanh\AppData\Local\ms-playwright\chromium-1140\chrome-win\_user_data\${randomString}`;
 
   // Tạo thư mục mới
   if (!fs.existsSync(userDataDir)) {
