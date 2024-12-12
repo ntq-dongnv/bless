@@ -318,6 +318,11 @@ linkify-it@5.0.0:
   dependencies:
     uc.micro "^2.0.0"
 
+lodash@^4.17.21:
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
+  integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
+
 mailparser@^3.7.1:
   version "3.7.1"
   resolved "https://registry.yarnpkg.com/mailparser/-/mailparser-3.7.1.tgz#4d0ea2eeb50a73dd10854a71ef1d4553bdce01cb"
@@ -379,6 +384,20 @@ nodemailer@6.9.13:
   version "6.9.13"
   resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-6.9.13.tgz#5b292bf1e92645f4852ca872c56a6ba6c4a3d3d6"
   integrity sha512-7o38Yogx6krdoBf3jCAqnIN4oSQFx+fMa0I7dK1D+me9kBxx12D+/33wSb+fhOCtIxvYJ+4x4IMEhmhCKfAiOA==
+
+ollama-ocr@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/ollama-ocr/-/ollama-ocr-0.0.2.tgz#2cf7b4c51fe952173c5a1450e9b3a21e1b432b92"
+  integrity sha512-Duz/vY5CeX2SpsC3PP72rWCGEan8Wal7tEBpkFXZRg64g0q4usJv8QDAXI1ePZflShR6Vs2tO/hCn6cvhBhquA==
+  dependencies:
+    ollama "^0.5.10"
+
+ollama@^0.5.10:
+  version "0.5.10"
+  resolved "https://registry.yarnpkg.com/ollama/-/ollama-0.5.10.tgz#82267e91b75445cef72a303a65664511f11bbbf9"
+  integrity sha512-M5O4u6S6yZeeKFrKA7ZfGGLjK54otOVGPrOUc3N64zSTpz9J+x/nh93dmD6Py7YLgXzq9I6Nq+PDDoaqJuV3LQ==
+  dependencies:
+    whatwg-fetch "^3.6.20"
 
 parseley@^0.12.0:
   version "0.12.1"
@@ -496,6 +515,11 @@ webidl-conversions@^3.0.0:
   version "3.0.1"
   resolved "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
   integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
+
+whatwg-fetch@^3.6.20:
+  version "3.6.20"
+  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.6.20.tgz#580ce6d791facec91d37c72890995a0b48d31c70"
+  integrity sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==
 
 whatwg-url@^5.0.0:
   version "5.0.0"

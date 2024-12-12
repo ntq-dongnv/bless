@@ -41,6 +41,8 @@ async function getProxyKeys() {
 }
 
 async function changeIP(proxyKey, force = false) {
+  console.log("Đang change IP");
+
   let success = false;
   let proxy = null;
 

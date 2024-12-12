@@ -1,6 +1,6 @@
 const supabase = require("./helpers").createSupabaseClient();
 
-async function fetchBlessAccounts(status, limit = 1000) {
+async function fetchBlessAccountsForRegNode(limit = 1000) {
   let allData = [];
   let page = 0;
   const pageSize = 1000;
@@ -9,7 +9,8 @@ async function fetchBlessAccounts(status, limit = 1000) {
     const { data, error } = await supabase
       .from("bless")
       .select("*")
-      .eq("status", status)
+      .lt("node_count", 5)
+      .order("node_count", { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) {
@@ -34,11 +35,82 @@ async function fetchBlessAccounts(status, limit = 1000) {
   return allData;
 }
 
-function updateBlessAccount(email, data) {
-  return supabase.from("bless").update(data).eq("email", email);
+async function updateBlessAccount(email, data) {
+  return await supabase.from("bless").update(data).eq("email", email);
+}
+
+async function incrementNodeCount(email) {
+  const { data: currentData, error: currentError } = await supabase
+    .from("bless")
+    .select("node_count")
+    .eq("email", email)
+    .single();
+
+  if (currentError) {
+    console.error("Lỗi khi lấy node_count hiện tại:", currentError);
+    throw currentError;
+  }
+
+  const currentNodeCount = currentData.node_count;
+  const { error: updateError } = await supabase
+    .from("bless")
+    .update({
+      node_count: currentNodeCount + 1,
+    })
+    .eq("email", email);
+
+  if (updateError) {
+    console.error("Lỗi khi tăng node_count:", updateError);
+    throw updateError;
+  }
+  console.log(currentNodeCount + 1);
+
+  return currentNodeCount + 1;
+}
+
+const getRandomBless = async () => {
+  const { data, error } = await supabase
+    .from("bless")
+    .select("*")
+    .not("ref_code", "is", null)
+    .order("random()")
+    .limit(1)
+    .single();
+
+  if (error) {
+    console.error("Error:", error);
+    return null;
+  }
+
+  return data;
+};
+
+async function createNode(email, nodeData) {
+  if (!email || !nodeData) {
+    throw new Error("Reg node thất bại, kiểm tra params");
+  }
+
+  const { data, error } = await supabase.from("bless_nodes").insert({
+    email: email,
+    peerEncryptedPrivKey: nodeData.peerEncryptedPrivKey,
+    peerPubKey: nodeData.peerPubKey,
+  });
+
+  if (error) {
+    throw new Error(`Tạo node thất bại: ${error.message}`);
+  }
+
+  return data;
 }
 
 module.exports = {
-  fetchBlessAccounts,
+  fetchBlessAccountsForRegNode,
   updateBlessAccount,
+  getRandomBless,
+  createNode,
+  incrementNodeCount,
 };
+
+// (async () => {
+//   await incrementNodeCount("mareikv.li.o.te.r@gmail.com");
+// })();
