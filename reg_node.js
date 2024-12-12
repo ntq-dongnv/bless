@@ -112,7 +112,7 @@ async function getRefCode(accountStatus) {
 }
 
 async function run() {
-  const userDataDir = "./_user_data";
+  const userDataDir = "C:\Users\thanh\AppData\Local\ms-playwright\chromium-1140\chrome-win\_user_data";
   await new Promise((resolve, reject) => {
     exec(`rm -rf "${userDataDir}"`, (error) => {
       if (error) {
