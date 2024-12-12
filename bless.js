@@ -147,7 +147,7 @@ async function login(email, proxy, refCode) {
     ]);
 
     Logger.info(`Đang verify OTP cho email: ${email}`);
-    await sleep(5000);
+    await sleep(10000);
     await verifyOtp(popup, email);
 
     // Đợi cho đến khi popup đóng và chuyển hướng xong
