@@ -4,6 +4,7 @@ const {
   updateBlessAccount,
   createNode,
   incrementNodeCount,
+  getRandomBless,
 } = require("./database");
 const Logger = require("./logger");
 const { changeIP, getProxyKeys } = require("./proxy/proxyfb");
@@ -12,53 +13,53 @@ const _ = require("lodash");
 const { exec } = require("child_process");
 
 async function regNode(accounts, proxyKey) {
-  const codes = [
-    "1CCCN8",
-    "XX064T",
-    "XPCTV7",
-    "P6ZR0O",
-    "6LYI31",
-    "BRBT90",
-    "L8KSMJ",
-    "P66KV1",
-    "9BW1LZ",
-    "434PIH",
-    "3J7SM2",
-    "7YEXV9",
-    "JGP5CT",
-    "VYTLLY",
-    "KW6SRL",
-    "B1SLDA",
-    "UX0XK7",
-    "4WPKAR",
-    "8SRL2R",
-    "PDS7W0",
-    "04D707",
-    "78SL72",
-    "VL4OB3",
-    "A8MY3J",
-    "QUBXH2",
-    "4N1E3X",
-    "FCG2RB",
-    "85C1FN",
-    "8SRL2R",
-    "EB2MBK",
-    "AWB5X5",
-    "TZHE88",
-    "5GZC2X",
-    "AWB5X5",
-    "TZHE88",
-    "5GZC2X",
-    "AWB5X5",
-    "TZHE88",
-    "5GZC2X",
-    "AWB5X5",
-    "TZHE88",
-    "5GZC2X",
-    "AWB5X5",
-    "TZHE88",
-    "5GZC2X",
-  ];
+  //   const codes = [
+  //     "1CCCN8",
+  //     "XX064T",
+  //     "XPCTV7",
+  //     "P6ZR0O",
+  //     "6LYI31",
+  //     "BRBT90",
+  //     "L8KSMJ",
+  //     "P66KV1",
+  //     "9BW1LZ",
+  //     "434PIH",
+  //     "3J7SM2",
+  //     "7YEXV9",
+  //     "JGP5CT",
+  //     "VYTLLY",
+  //     "KW6SRL",
+  //     "B1SLDA",
+  //     "UX0XK7",
+  //     "4WPKAR",
+  //     "8SRL2R",
+  //     "PDS7W0",
+  //     "04D707",
+  //     "78SL72",
+  //     "VL4OB3",
+  //     "A8MY3J",
+  //     "QUBXH2",
+  //     "4N1E3X",
+  //     "FCG2RB",
+  //     "85C1FN",
+  //     "8SRL2R",
+  //     "EB2MBK",
+  //     "AWB5X5",
+  //     "TZHE88",
+  //     "5GZC2X",
+  //     "AWB5X5",
+  //     "TZHE88",
+  //     "5GZC2X",
+  //     "AWB5X5",
+  //     "TZHE88",
+  //     "5GZC2X",
+  //     "AWB5X5",
+  //     "TZHE88",
+  //     "5GZC2X",
+  //     "AWB5X5",
+  //     "TZHE88",
+  //     "5GZC2X",
+  //   ];
 
   for (const account of accounts) {
     if (!account) {
@@ -70,7 +71,7 @@ async function regNode(accounts, proxyKey) {
     const remainingNodes = MAX_NODES_PER_ACCOUNT - account.node_count;
 
     for (let i = 0; i < remainingNodes; i++) {
-      const refCode = getRefCode(account.status, codes);
+      const refCode = await getRefCode(account.status);
 
       try {
         const proxy = await changeIP(proxyKey);
@@ -100,11 +101,14 @@ async function regNode(accounts, proxyKey) {
   }
 }
 
-function getRefCode(accountStatus, availableCodes) {
+async function getRefCode(accountStatus) {
   if (accountStatus === status.NOT_REGISTERED) {
-    return [...availableCodes].sort(() => Math.random() - 0.5)[0];
+    const blessRecrod = await getRandomBless();
+
+    return blessRecrod.ref_code || "";
   }
-  return null;
+
+  return "";
 }
 
 async function run() {

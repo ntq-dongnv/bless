@@ -63,18 +63,22 @@ async function incrementNodeCount(email) {
     console.error("Lỗi khi tăng node_count:", updateError);
     throw updateError;
   }
-  console.log(currentNodeCount + 1);
-
   return currentNodeCount + 1;
 }
 
 const getRandomBless = async () => {
+  const { count } = await supabase
+    .from("bless")
+    .select("*", { count: "exact", head: true })
+    .not("ref_code", "is", null);
+
+  const randomOffset = Math.floor(Math.random() * count);
+
   const { data, error } = await supabase
     .from("bless")
-    .select("*")
+    .select("ref_code")
     .not("ref_code", "is", null)
-    .order("random()")
-    .limit(1)
+    .range(randomOffset, randomOffset)
     .single();
 
   if (error) {
@@ -112,5 +116,5 @@ module.exports = {
 };
 
 // (async () => {
-//   await incrementNodeCount("mareikv.li.o.te.r@gmail.com");
+//   await getRandomBless();
 // })();
