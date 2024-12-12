@@ -6,7 +6,6 @@ const fs = require("fs");
 const Logger = require("./logger");
 process.env.NODE_NO_WARNINGS = "1";
 const { exec } = require("child_process");
-const { error } = require("console");
 
 async function verifyOtp(popup, email) {
   const maxRetries = 1;
@@ -233,13 +232,37 @@ async function login(email, proxy, refCode) {
     await sleep(10000);
     await browser.close();
 
+    // Xóa thư mục user data sau khi đóng browser
+    await new Promise((resolve, reject) => {
+      exec(`rm -rf "${userDataDir}"`, (error) => {
+        if (error) {
+          Logger.error(`Lỗi khi xóa thư mục ${userDataDir}: ${error}`);
+          reject(error);
+        } else {
+          Logger.info(`Đã xóa thư mục ${userDataDir}`);
+          resolve();
+        }
+      });
+    });
+
     return {
       authToken,
       referrals,
       nodeData,
     };
   } catch (e) {
-    browser.close();
+    // Đảm bảo xóa thư mục ngay cả khi có lỗi
+    await browser.close();
+    await new Promise((resolve) => {
+      exec(`rm -rf "${userDataDir}"`, (error) => {
+        if (error) {
+          Logger.error(`Lỗi khi xóa thư mục ${userDataDir}: ${error}`);
+        } else {
+          Logger.info(`Đã xóa thư mục ${userDataDir}`);
+        }
+        resolve();
+      });
+    });
     throw e;
   }
 }

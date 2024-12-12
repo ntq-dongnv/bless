@@ -9,6 +9,7 @@ const Logger = require("./logger");
 const { changeIP, getProxyKeys } = require("./proxy/proxyfb");
 const { status } = require("./status");
 const _ = require("lodash");
+const { exec } = require("child_process");
 
 async function regNode(accounts, proxyKey) {
   const codes = [
@@ -107,6 +108,19 @@ function getRefCode(accountStatus, availableCodes) {
 }
 
 async function run() {
+  const userDataDir = "./_user_data";
+  await new Promise((resolve, reject) => {
+    exec(`rm -rf "${userDataDir}"`, (error) => {
+      if (error) {
+        Logger.error(`Lỗi khi xóa thư mục ${userDataDir}: ${error}`);
+        reject(error);
+      } else {
+        Logger.info(`Đã xóa thư mục ${userDataDir}`);
+        resolve();
+      }
+    });
+  });
+
   while (true) {
     console.log("Đang lấy proxy");
     const proxies = await getProxyKeys();
